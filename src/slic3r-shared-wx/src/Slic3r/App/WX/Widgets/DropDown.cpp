@@ -12,6 +12,7 @@
 #include <wx/bitmap.h>
 
 #include <wx/display.h>
+#include <wx/settings.h>
 
 #ifdef __WXGTK__
 #include <gtk/gtk.h>
@@ -247,23 +248,27 @@ void DropDown::paintNow()
 
 void DropDown::SetTransparentBG(wxDC& dc, wxWindow* win)
 {
-    const wxSize  size       = win->GetSize();
-    const wxPoint screen_pos = win->GetScreenPosition();
-    wxScreenDC    screen_dc;
+    const wxSize size = win->GetSize();
 
 #ifdef __WXMSW__
     // Draw screen_dc to dc for transparent background
+    const wxPoint screen_pos = win->GetScreenPosition();
+    wxScreenDC    screen_dc;
     dc.Blit(0, 0, size.x, size.y, &screen_dc, screen_pos.x, screen_pos.y);
 #else
-    // See https://forums.wxwidgets.org/viewtopic.php?f=1&t=49318
-    wxClientDC client_dc(win);
-    client_dc.Blit(0, 0, size.x, size.y, &screen_dc, screen_pos.x, screen_pos.y);
+    // The popup is drawn over its parent, so fill with the parent's background.
+    // Reading the screen back is unreliable: under Wayland a client gets
+    // neither the screen contents nor its own global position (#11743).
+    const wxWindow* parent = win->GetParent();
+    wxColour bg = parent ? parent->GetBackgroundColour() : wxColour();
+    if (!bg.IsOk())
+        bg = win->GetBackgroundColour();
+    if (!bg.IsOk())
+        bg = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
 
-    wxBitmap bmp(size.x, size.y);
-    wxMemoryDC mem_dc(bmp);
-    mem_dc.Blit(0, 0, size.x, size.y, &client_dc, 0, 0);
-    mem_dc.SelectObject(wxNullBitmap);
-    dc.DrawBitmap(bmp, 0, 0);
+    dc.SetPen(*wxTRANSPARENT_PEN);
+    dc.SetBrush(wxBrush(bg));
+    dc.DrawRectangle(0, 0, size.x, size.y);
 #endif //__WXMSW__
 }
 
