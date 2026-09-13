@@ -166,12 +166,6 @@ int run(const Slic3r::App::InitParams& init_params, AppServices& app_services)
     // startup if gtk3 is used. This env var has to be set explicitly to
     // instruct the window manager to fall back to X server mode.
     ::setenv("GDK_BACKEND", "x11", /* replace */ true);
-
-    if (app_services.app_config().get<Theme::Style>("theme") == Theme::Style::Light) {
-        setenv("GTK_THEME", "Adwaita:light", 1);
-    } else {
-        setenv("GTK_THEME", "Adwaita:dark", 1);
-    }
 #endif
 
     bool single_instance_app_config =
